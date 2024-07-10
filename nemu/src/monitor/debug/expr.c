@@ -6,14 +6,23 @@
 #include <sys/types.h>
 #include <regex.h>
 
-enum {
-	NOTYPE = 256, EQ
-
+enum
+{
+	NOTYPE = 256,
+	NUM = 1,
+	RESGISTER = 2,
+	HEX = 3,
+	EQ = 4,
+	NOTEQ = 5,
+	OR = 6,
+	AND = 7,
+	POINT,
+	NEG
 	/* TODO: Add more token types */
-
 };
 
-static struct rule {
+static struct rule
+{
 	char *regex;
 	int token_type;
 } rules[] = {
@@ -22,33 +31,54 @@ static struct rule {
 	 * Pay attention to the precedence level of different rules.
 	 */
 
-	{" +",	NOTYPE},				// spaces
-	{"\\+", '+'},					// plus
-	{"==", EQ}						// equal
+	{" +", NOTYPE}, // spaces
+
+	{"\\+", '+'}, // plus
+	{"\\-", '-'},
+	{"\\*", '*'},
+	{"\\/", '/'},
+
+	{"\\$[a-z]+", RESGISTER},
+	{"0[xX][0-9a-fA-F]+", HEX},
+	{"[0-9]+", NUM},
+
+	{"==", EQ}, // equal
+	{"!=", NOTEQ},
+
+	{"\\(", '('},
+	{"\\)", ')'},
+
+	{"\\|\\|", OR},
+	{"&&", AND},
+	{"!", '!'},
 };
 
-#define NR_REGEX (sizeof(rules) / sizeof(rules[0]) )
+#define NR_REGEX (sizeof(rules) / sizeof(rules[0]))
 
 static regex_t re[NR_REGEX];
 
 /* Rules are used for many times.
  * Therefore we compile them only once before any usage.
  */
-void init_regex() {
+void init_regex()
+{
 	int i;
 	char error_msg[128];
 	int ret;
 
-	for(i = 0; i < NR_REGEX; i ++) {
+	for (i = 0; i < NR_REGEX; i++)
+	{
 		ret = regcomp(&re[i], rules[i].regex, REG_EXTENDED);
-		if(ret != 0) {
+		if (ret != 0)
+		{
 			regerror(ret, &re[i], error_msg, 128);
 			Assert(ret == 0, "regex compilation failed: %s\n%s", error_msg, rules[i].regex);
 		}
 	}
 }
 
-typedef struct token {
+typedef struct token
+{
 	int type;
 	char str[32];
 } Token;
@@ -56,17 +86,21 @@ typedef struct token {
 Token tokens[32];
 int nr_token;
 
-static bool make_token(char *e) {
+static bool make_token(char *e)
+{
 	int position = 0;
 	int i;
 	regmatch_t pmatch;
-	
+
 	nr_token = 0;
 
-	while(e[position] != '\0') {
+	while (e[position] != '\0')
+	{
 		/* Try all rules one by one. */
-		for(i = 0; i < NR_REGEX; i ++) {
-			if(regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {
+		for (i = 0; i < NR_REGEX; i++)
+		{
+			if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0)
+			{
 				char *substr_start = e + position;
 				int substr_len = pmatch.rm_eo;
 
@@ -77,26 +111,101 @@ static bool make_token(char *e) {
 				 * to record the token in the array `tokens'. For certain types
 				 * of tokens, some extra actions should be performed.
 				 */
+				int j;
+				for (j = 0; j < 32; j++) // clear
+				{
+					tokens[nr_token].str[j] = '\0';
+				}
 
-				switch(rules[i].token_type) {
-					default: panic("please implement me");
+				switch (rules[i].token_type)
+				{
+				case 256:
+					break;
+				case 1:
+					tokens[nr_token].type = 1;
+					strncpy(tokens[nr_token].str, &e[position - substr_len], substr_len);
+					nr_token++;
+					break;
+				case 2:
+					tokens[nr_token].type = 2;
+					strncpy(tokens[nr_token].str, &e[position - substr_len], substr_len);
+					nr_token++;
+					break;
+				case 3:
+					tokens[nr_token].type = 3;
+					strncpy(tokens[nr_token].str, &e[position - substr_len], substr_len);
+					nr_token++;
+					break;
+				case 4:
+					tokens[nr_token].type = 4;
+					strcpy(tokens[nr_token].str, "==");
+					nr_token++;
+					break;
+				case 5:
+					tokens[nr_token].type = 5;
+					strcpy(tokens[nr_token].str, "!=");
+					nr_token++;
+					break;
+				case 6:
+					tokens[nr_token].type = 6;
+					strcpy(tokens[nr_token].str, "||");
+					nr_token++;
+					break;
+				case 7:
+					tokens[nr_token].type = 7;
+					strcpy(tokens[nr_token].str, "&&");
+					nr_token++;
+					break;
+				case '+':
+					tokens[nr_token].type = '+';
+					nr_token++;
+					break;
+				case '-':
+					tokens[nr_token].type = '-';
+					nr_token++;
+					break;
+				case '*':
+					tokens[nr_token].type = '*';
+					nr_token++;
+					break;
+				case '/':
+					tokens[nr_token].type = '/';
+					nr_token++;
+					break;
+				case '!':
+					tokens[nr_token].type = '!';
+					nr_token++;
+					break;
+				case '(':
+					tokens[nr_token].type = '(';
+					nr_token++;
+					break;
+				case ')':
+					tokens[nr_token].type = ')';
+					nr_token++;
+					break;
+				default:
+					assert(0);
 				}
 
 				break;
 			}
 		}
 
-		if(i == NR_REGEX) {
+		if (i == NR_REGEX)
+		{
 			printf("no match at position %d\n%s\n%*.s^\n", position, e, position, "");
 			return false;
 		}
 	}
 
-	return true; 
+	return true;
 }
 
-uint32_t expr(char *e, bool *success) {
-	if(!make_token(e)) {
+uint32_t expr(char *e, bool *success)
+{
+	if (!make_token(e))
+	{
 		*success = false;
 		return 0;
 	}
@@ -105,4 +214,3 @@ uint32_t expr(char *e, bool *success) {
 	panic("please implement me");
 	return 0;
 }
-
