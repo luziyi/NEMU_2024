@@ -90,8 +90,6 @@ bool check_parentheses(int p, int q);
 int dominant_operator(int p, int q);
 uint32_t eval(int p, int q);
 
-
-
 static bool make_token(char *e)
 {
 	int position = 0;
@@ -338,207 +336,148 @@ int dominant_operator(int p, int q)
 uint32_t eval(int p, int q)
 {
 	int result = 0;
-	int op = 0;
+	int op;
 	int val1, val2;
 
-	if (op == -2)
+	if (p > q)
 	{
 		assert(0);
 	}
-	else if (op == -1)
+	else if (p == q)
 	{
-		if (tokens[p].type == POINT)
+		if (tokens[p].type == NUM)
 		{
-			if (!strcmp(tokens[p + 2].str, "$eax"))
+			sscanf(tokens[p].str, "%d", &result);
+			return result;
+		}
+		else if (tokens[p].type == HEX)
+		{
+			int i = 2;
+			while (tokens[p].str[i] != 0)
 			{
-				result = swaddr_read(cpu.eax, 4);
-				return result;
-			}
-			else if (!strcmp(tokens[p + 2].str, "$ecx"))
-			{
-				result = swaddr_read(cpu.ecx, 4);
-				return result;
-			}
-			else if (!strcmp(tokens[p + 2].str, "$edx"))
-			{
-				result = swaddr_read(cpu.edx, 4);
-				return result;
-			}
-			else if (!strcmp(tokens[p + 2].str, "$ebx"))
-			{
-				result = swaddr_read(cpu.ebx, 4);
-				return result;
-			}
-			else if (!strcmp(tokens[p + 2].str, "$esp"))
-			{
-				result = swaddr_read(cpu.esp, 4);
-				return result;
-			}
-			else if (!strcmp(tokens[p + 2].str, "$ebp"))
-			{
-				result = swaddr_read(cpu.ebp, 4);
-				return result;
-			}
-			else if (!strcmp(tokens[p + 2].str, "$esi"))
-			{
-				result = swaddr_read(cpu.esi, 4);
-				return result;
-			}
-			else if (!strcmp(tokens[p + 2].str, "$edi"))
-			{
-				result = swaddr_read(cpu.edi, 4);
-				return result;
-			}
-			else if (!strcmp(tokens[p + 2].str, "$eip"))
-			{
-				result = swaddr_read(cpu.eip, 4);
-				return result;
+				result *= 16;
+				result += tokens[p].str[i] < 58 ? tokens[p].str[i] - '0' : tokens[p].str[i] - 'a' + 10;
+				i++;
 			}
 		}
-	}
-	else if (tokens[p].type == NEG)
-	{
-		sscanf(tokens[q].str, "%d", &result);
-		return -result;
-		if (p > q)
+		else if (tokens[p].type == RESGISTER)
+		{
+			if (!strcmp(tokens[p].str, "$eax"))
+			{
+				return cpu.eax;
+			}
+			else if (!strcmp(tokens[p].str, "$ecx"))
+			{
+				return cpu.ecx;
+			}
+			else if (!strcmp(tokens[p].str, "$edx"))
+			{
+				return cpu.edx;
+			}
+			else if (!strcmp(tokens[p].str, "$ebx"))
+			{
+				return cpu.ebx;
+			}
+			else if (!strcmp(tokens[p].str, "$esp"))
+			{
+				return cpu.esp;
+			}
+			else if (!strcmp(tokens[p].str, "$ebp"))
+			{
+				return cpu.ebp;
+			}
+			else if (!strcmp(tokens[p].str, "$esi"))
+			{
+				return cpu.esi;
+			}
+			else if (!strcmp(tokens[p].str, "$edi"))
+			{
+				return cpu.edi;
+			}
+			else if (!strcmp(tokens[p].str, "$eip"))
+			{
+				return cpu.eip;
+			}
+			else
+			{
+				return 0;
+			}
+		}
+		else
 		{
 			assert(0);
 		}
-		else if (p == q)
+	}
+	else if (check_parentheses(p, q) == true)
+	{
+		return eval(p + 1, q - 1);
+	}
+	else
+	{
+		op = dominant_operator(p, q);
+		if (op == -2)
 		{
-			if (tokens[p].type == NUM)
+			assert(0);
+		}
+		else if (tokens[p].type == '!')
+		{
+			sscanf(tokens[q].str, "%d", &result);
+			return !result;
+		}
+		else if (tokens[p].type == RESGISTER)
+		{
+			if (!strcmp(tokens[p].str, "$eax"))
 			{
-				sscanf(tokens[p].str, "%d", &result);
+				result = cpu.eax;
 				return result;
 			}
-			else if (tokens[p].type == HEX)
+			else if (!strcmp(tokens[p].str, "$ecx"))
 			{
-				int i = 2;
-				while (tokens[p].str[i] != 0)
-				{
-					result *= 16;
-					result += tokens[p].str[i] < 58 ? tokens[p].str[i] - '0' : tokens[p].str[i] - 'a' + 10;
-					i++;
-				}
+				result = cpu.ecx;
+				return result;
 			}
-			else if (tokens[p].type == RESGISTER)
+			else if (!strcmp(tokens[p].str, "$edx"))
 			{
-				if (!strcmp(tokens[p].str, "$eax"))
-				{
-					return cpu.eax;
-				}
-				else if (!strcmp(tokens[p].str, "$ecx"))
-				{
-					return cpu.ecx;
-				}
-				else if (!strcmp(tokens[p].str, "$edx"))
-				{
-					return cpu.edx;
-				}
-				else if (!strcmp(tokens[p].str, "$ebx"))
-				{
-					return cpu.ebx;
-				}
-				else if (!strcmp(tokens[p].str, "$esp"))
-				{
-					return cpu.esp;
-				}
-				else if (!strcmp(tokens[p].str, "$ebp"))
-				{
-					return cpu.ebp;
-				}
-				else if (!strcmp(tokens[p].str, "$esi"))
-				{
-					return cpu.esi;
-				}
-				else if (!strcmp(tokens[p].str, "$edi"))
-				{
-					return cpu.edi;
-				}
-				else if (!strcmp(tokens[p].str, "$eip"))
-				{
-					return cpu.eip;
-				}
-				else
-				{
-					return 0;
-				}
+				result = cpu.edx;
+				return result;
+			}
+			else if (!strcmp(tokens[p].str, "$ebx"))
+			{
+				result = cpu.ebx;
+				return result;
+			}
+			else if (!strcmp(tokens[p].str, "$esp"))
+			{
+				result = cpu.esp;
+				return result;
+			}
+			else if (!strcmp(tokens[p].str, "$ebp"))
+			{
+				result = cpu.ebp;
+				return result;
+			}
+			else if (!strcmp(tokens[p].str, "$esi"))
+			{
+				result = cpu.esi;
+				return result;
+			}
+			else if (!strcmp(tokens[p].str, "$edi"))
+			{
+				result = cpu.edi;
+				return result;
+			}
+			else if (!strcmp(tokens[p].str, "$eip"))
+			{
+				result = cpu.eip;
+				return result;
 			}
 			else
 			{
 				assert(0);
+				return 0;
 			}
 		}
-		else if (check_parentheses(p, q) == true)
-		{
-			return eval(p + 1, q - 1);
-		}
-		else
-		{
-			op = dominant_operator(p, q);
-			if (op == -2)
-			{
-				assert(0);
-			}
-			else if (tokens[p].type == '!')
-			{
-				sscanf(tokens[q].str, "%d", &result);
-				return !result;
-			}
-			else if (tokens[p].type == RESGISTER)
-			{
-				if (!strcmp(tokens[p].str, "$eax"))
-				{
-					result = cpu.eax;
-					return result;
-				}
-				else if (!strcmp(tokens[p].str, "$ecx"))
-				{
-					result = cpu.ecx;
-					return result;
-				}
-				else if (!strcmp(tokens[p].str, "$edx"))
-				{
-					result = cpu.edx;
-					return result;
-				}
-				else if (!strcmp(tokens[p].str, "$ebx"))
-				{
-					result = cpu.ebx;
-					return result;
-				}
-				else if (!strcmp(tokens[p].str, "$esp"))
-				{
-					result = cpu.esp;
-					return result;
-				}
-				else if (!strcmp(tokens[p].str, "$ebp"))
-				{
-					result = cpu.ebp;
-					return result;
-				}
-				else if (!strcmp(tokens[p].str, "$esi"))
-				{
-					result = cpu.esi;
-					return result;
-				}
-				else if (!strcmp(tokens[p].str, "$edi"))
-				{
-					result = cpu.edi;
-					return result;
-				}
-				else if (!strcmp(tokens[p].str, "$eip"))
-				{
-					result = cpu.eip;
-					return result;
-				}
-				else
-				{
-					assert(0);
-					return 0;
-				}
-			}
-		}
+
 		val1 = eval(p, op - 1);
 		val2 = eval(op + 1, q);
 
