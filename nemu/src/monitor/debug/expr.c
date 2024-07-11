@@ -320,7 +320,7 @@ int dominant_operator(int p, int q)
 uint32_t eval(int p, int q)
 {
 	int result = 0;
-	int op;
+	int op=0;
 	int val1, val2;
 	if (p > q)
 	{
