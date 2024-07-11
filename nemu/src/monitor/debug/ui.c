@@ -265,6 +265,7 @@ static int cmd_w(char *args)
 	{
 		WP* temp;
 		temp=new_wp();
+		temp->expr = malloc(strlen(args)+1);
 		strcpy(temp->expr,args);
 		printf("WatchPoint Set\n");
 	}
