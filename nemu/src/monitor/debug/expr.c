@@ -86,6 +86,11 @@ typedef struct token
 Token tokens[32];
 int nr_token;
 
+
+bool check_parentheses(int p, int q);
+int dominant_operator(int p, int q);
+uint32_t eval(int p, int q);
+
 static bool make_token(char *e)
 {
 	int position = 0;
@@ -211,8 +216,20 @@ uint32_t expr(char *e, bool *success)
 	}
 
 	/* TODO: Insert codes to evaluate the expression. */
+	int i;
+	for (i = 0; i < nr_token; i++)
+	{
+		if (tokens[i].type == '*' && (i == 0 || (tokens[i - 1].type != NUM && tokens[i - 1].type != HEX && tokens[i - 1].type != ')')))
+		{
+			tokens[i].type = POINT;
+		}
+		if (tokens[i].type == '-' && (i == 0 || (tokens[i - 1].type != NUM && tokens[i - 1].type != HEX && tokens[i - 1].type != ')')))
+		{
+			tokens[i].type = NEG;
+		}
+	}
 	panic("please implement me");
-	return 0;
+	return eval(0, nr_token - 1);
 }
 
 bool check_parentheses(int p, int q)
@@ -329,6 +346,54 @@ uint32_t eval(int p, int q)
 	}
 	else if (op == -1)
 	{
+		if (tokens[p].type == POINT)
+		{
+			if (!strcmp(tokens[p + 2].str, "$eax"))
+			{
+				result = swaddr_read(cpu.eax, 4);
+				return result;
+			}
+			else if (!strcmp(tokens[p + 2].str, "$ecx"))
+			{
+				result = swaddr_read(cpu.ecx, 4);
+				return result;
+			}
+			else if (!strcmp(tokens[p + 2].str, "$edx"))
+			{
+				result = swaddr_read(cpu.edx, 4);
+				return result;
+			}
+			else if (!strcmp(tokens[p + 2].str, "$ebx"))
+			{
+				result = swaddr_read(cpu.ebx, 4);
+				return result;
+			}
+			else if (!strcmp(tokens[p + 2].str, "$esp"))
+			{
+				result = swaddr_read(cpu.esp, 4);
+				return result;
+			}
+			else if (!strcmp(tokens[p + 2].str, "$ebp"))
+			{
+				result = swaddr_read(cpu.ebp, 4);
+				return result;
+			}
+			else if (!strcmp(tokens[p + 2].str, "$esi"))
+			{
+				result = swaddr_read(cpu.esi, 4);
+				return result;
+			}
+			else if (!strcmp(tokens[p + 2].str, "$edi"))
+			{
+				result = swaddr_read(cpu.edi, 4);
+				return result;
+			}
+			else if (!strcmp(tokens[p + 2].str, "$eip"))
+			{
+				result = swaddr_read(cpu.eip, 4);
+				return result;
+			}
+		}
 	}
 	else if (tokens[p].type == NEG)
 	{

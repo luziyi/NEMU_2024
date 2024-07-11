@@ -45,7 +45,7 @@ static int cmd_help(char *args);
 static int cmd_si(char *args);
 static int cmd_info(char *args);
 static int cmd_x(char *args);
-
+static int cmd_p(char *args);
 static struct
 {
 	char *name;
@@ -57,7 +57,8 @@ static struct
 	{"q", "Exit NEMU", cmd_q},
 	{"si", "One step", cmd_si},
 	{"info", "Display all informations of regisiters", cmd_info},
-	{"x","Print the content of address",cmd_x}
+	{"x","Print the content of address",cmd_x},
+	{"p","Calculate the value of expression",cmd_p}
 	/* TODO: Add more commands */
 
 };
@@ -150,6 +151,16 @@ static int cmd_x(char *args){
 		}
 			}
 	printf("\n");
+	return 0;
+}
+
+static int cmd_p(char *args){
+	bool *success = false;
+	int i;
+	i = expr(args, success);
+	if (!success){
+		printf("%d\n", i);
+	}
 	return 0;
 }
 
