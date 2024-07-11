@@ -474,64 +474,65 @@ uint32_t eval(int p, int q)
 				sscanf(tokens[q].str, "%d", &result);
 				return -result;
 			}
-		}
-		else if (tokens[p].type == '!')
-		{
-			sscanf(tokens[q].str, "%d", &result);
-			return !result;
-		}
-		else if (tokens[p].type == RESGISTER)
-		{
-			if (!strcmp(tokens[p].str, "$eax"))
+
+			else if (tokens[p].type == '!')
 			{
-				result = cpu.eax;
-				return result;
+				sscanf(tokens[q].str, "%d", &result);
+				return !result;
 			}
-			else if (!strcmp(tokens[p].str, "$ecx"))
+			else if (tokens[p].type == RESGISTER)
 			{
-				result = cpu.ecx;
-				return result;
+				if (!strcmp(tokens[p].str, "$eax"))
+				{
+					result = cpu.eax;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$ecx"))
+				{
+					result = cpu.ecx;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$edx"))
+				{
+					result = cpu.edx;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$ebx"))
+				{
+					result = cpu.ebx;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$esp"))
+				{
+					result = cpu.esp;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$ebp"))
+				{
+					result = cpu.ebp;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$esi"))
+				{
+					result = cpu.esi;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$edi"))
+				{
+					result = cpu.edi;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$eip"))
+				{
+					result = cpu.eip;
+					return result;
+				}
 			}
-			else if (!strcmp(tokens[p].str, "$edx"))
+			else
 			{
-				result = cpu.edx;
-				return result;
+				assert(0);
+				return 0;
 			}
-			else if (!strcmp(tokens[p].str, "$ebx"))
-			{
-				result = cpu.ebx;
-				return result;
-			}
-			else if (!strcmp(tokens[p].str, "$esp"))
-			{
-				result = cpu.esp;
-				return result;
-			}
-			else if (!strcmp(tokens[p].str, "$ebp"))
-			{
-				result = cpu.ebp;
-				return result;
-			}
-			else if (!strcmp(tokens[p].str, "$esi"))
-			{
-				result = cpu.esi;
-				return result;
-			}
-			else if (!strcmp(tokens[p].str, "$edi"))
-			{
-				result = cpu.edi;
-				return result;
-			}
-			else if (!strcmp(tokens[p].str, "$eip"))
-			{
-				result = cpu.eip;
-				return result;
-			}
-		}
-		else
-		{
-			assert(0);
-			return 0;
 		}
 
 		val1 = eval(p, op - 1);
