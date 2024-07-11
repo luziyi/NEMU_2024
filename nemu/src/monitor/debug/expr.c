@@ -86,10 +86,11 @@ typedef struct token
 Token tokens[32];
 int nr_token;
 
-
 bool check_parentheses(int p, int q);
 int dominant_operator(int p, int q);
 uint32_t eval(int p, int q);
+
+
 
 static bool make_token(char *e)
 {
@@ -228,7 +229,7 @@ uint32_t expr(char *e, bool *success)
 			tokens[i].type = NEG;
 		}
 	}
-	panic("please implement me");
+	// panic("please implement me");
 	return eval(0, nr_token - 1);
 }
 
