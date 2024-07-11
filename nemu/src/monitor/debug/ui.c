@@ -263,7 +263,8 @@ static int cmd_w(char *args)
 	}
 	else
 	{
-		WP* temp=new_wp();
+		WP* temp;
+		temp=new_wp();
 		strcpy(temp->expr,args);
 		printf("WatchPoint Set\n");
 	}
