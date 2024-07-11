@@ -38,7 +38,6 @@ WP* new_wp(){
 	return temp;
 }
 
-
 void free_wp(WP *wp){
 	if (wp == NULL){
 		assert(0);

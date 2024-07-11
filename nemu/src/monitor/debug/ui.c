@@ -47,6 +47,7 @@ static int cmd_info(char *args);
 static int cmd_x(char *args);
 static int cmd_p(char *args);
 static int cmd_d(char *args);
+static int cmd_w(char *args);
 static struct
 {
 	char *name;
@@ -61,6 +62,8 @@ static struct
 	{"x", "Print the content of address", cmd_x},
 	{"p", "Calculate the value of expression", cmd_p},
 	{"d", "Delete the watchpoint", cmd_d},
+	{"w", "Set the watchpoint", cmd_w},
+
 	/* TODO: Add more commands */
 
 };
@@ -232,18 +235,36 @@ void ui_mainloop()
 	}
 }
 
-static int cmd_d(char *args){
+static int cmd_d(char *args)
+{
 	int p;
 	bool key = true;
 	sscanf(args, "%d", &p);
-	WP* q = delete_wp(p, &key);
-	if (key){
+	WP *q = delete_wp(p, &key);
+	if (key)
+	{
 		printf("Delete watchpoint %d: %s\n", q->NO, q->expr);
 		free_wp(q);
 		return 0;
-	} else {
+	}
+	else
+	{
 		printf("No found watchpoint %d\n", p);
 		return 0;
+	}
+	return 0;
+}
+
+static int cmd_w(char *args)
+{
+	if (args == NULL)
+	{
+		printf("No input!\n");
+	}
+	else
+	{
+		new_wp();
+		printf("WatchPoint Set\n");
 	}
 	return 0;
 }
