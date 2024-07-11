@@ -57,8 +57,8 @@ static struct
 	{"q", "Exit NEMU", cmd_q},
 	{"si", "One step", cmd_si},
 	{"info", "Display all informations of regisiters", cmd_info},
-	{"x","Print the content of address",cmd_x},
-	{"p","Calculate the value of expression",cmd_p}
+	{"x", "Print the content of address", cmd_x},
+	{"p", "Calculate the value of expression", cmd_p}
 	/* TODO: Add more commands */
 
 };
@@ -94,71 +94,89 @@ static int cmd_help(char *args)
 	return 0;
 }
 
-static int cmd_si(char *args){
-	char *sencondWord = strtok(NULL," ");
+static int cmd_si(char *args)
+{
+	char *sencondWord = strtok(NULL, " ");
 	int step = 0;
 	int i;
-	if (sencondWord == NULL){
+	if (sencondWord == NULL)
+	{
 		cpu_exec(1);
-		return 0;	
+		return 0;
 	}
 	sscanf(sencondWord, "%d", &step);
-	if (step <= 0){
+	if (step <= 0)
+	{
 		printf("MISINIPUT\n");
 		return 0;
 	}
-	for (i = 0; i < step; i++){
+	for (i = 0; i < step; i++)
+	{
 		cpu_exec(1);
 	}
 	return 0;
 }
 
-static int cmd_info(char *args){
-	char *sencondWord = strtok(NULL," ");
+static int cmd_info(char *args)
+{
+	char *sencondWord = strtok(NULL, " ");
 	int i;
-	if (strcmp(sencondWord, "r") == 0){
-		for (i = 0; i < 8; i++){
+	if (strcmp(sencondWord, "r") == 0)
+	{
+		for (i = 0; i < 8; i++)
+		{
 			printf("%s\t\t", regsl[i]);
 			printf("0x%08x\t\t%d\n", cpu.gpr[i]._32, cpu.gpr[i]._32);
 		}
 		printf("eip\t\t0x%08x\t\t%d\n", cpu.eip, cpu.eip);
-	return 0;
+		return 0;
+	}
+	else if (strcmp(sencondWord, "w") == 0)
+	{
+		printf_wp();
+		return 0;
 	}
 	printf("MISINPUT\n");
 	return 0;
 }
 
-static int cmd_x(char *args){
-	char *sencondWord = strtok(NULL," ");
+static int cmd_x(char *args)
+{
+	char *sencondWord = strtok(NULL, " ");
 	char *thirdWord = strtok(NULL, " ");
-	
+
 	int step = 0;
 	swaddr_t address;
-	
+
 	sscanf(sencondWord, "%d", &step);
 	sscanf(thirdWord, "%x", &address);
 
 	int i, j = 0;
-	for (i = 0; i < step; i++){
-		if (j % 4 == 0){
+	for (i = 0; i < step; i++)
+	{
+		if (j % 4 == 0)
+		{
 			printf("0x%x:", address);
 		}
 		printf("0x%08x ", swaddr_read(address, 4));
 		address += 4;
 		j++;
-		if (j % 4 == 0){
+		if (j % 4 == 0)
+		{
 			printf("\n");
 		}
-			}
+	}
 	printf("\n");
 	return 0;
 }
 
-static int cmd_p(char *args){
+static int cmd_p(char *args)
+{
 	bool *success = false;
 	int i;
 	i = expr(args, success);
-	if (!success){
+	if (!success)
+	{
 		printf("%d\n", i);
 	}
 	return 0;
