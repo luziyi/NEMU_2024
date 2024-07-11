@@ -268,7 +268,7 @@ static int cmd_w(char *args)
 		temp=new_wp();
 		temp->expr = malloc(strlen(args)+1);
 		strcpy(temp->expr,args);
-		expr(temp->expr, success);
+		temp->result=expr(temp->expr, success);
 		printf ("Watchpoint %d: %s\n",temp->NO,temp->expr);
 	}
 	return 0;
