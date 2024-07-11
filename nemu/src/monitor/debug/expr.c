@@ -320,184 +320,197 @@ int dominant_operator(int p, int q)
 uint32_t eval(int p, int q)
 {
 	int result = 0;
-	int op=0;
+	int op = 0;
 	int val1, val2;
-	if (p > q)
+
+	if (op == -2)
 	{
 		assert(0);
 	}
-	else if (p == q)
+	else if (op == -1)
 	{
-		if (tokens[p].type == NUM)
-		{
-			sscanf(tokens[p].str, "%d", &result);
-			return result;
-		}
-		else if (tokens[p].type == HEX)
-		{
-			int i = 2;
-			while (tokens[p].str[i] != 0)
-			{
-				result *= 16;
-				result += tokens[p].str[i] < 58 ? tokens[p].str[i] - '0' : tokens[p].str[i] - 'a' + 10;
-				i++;
-			}
-		}
-		else if (tokens[p].type == RESGISTER)
-		{
-			if (!strcmp(tokens[p].str, "$eax"))
-			{
-				return cpu.eax;
-			}
-			else if (!strcmp(tokens[p].str, "$ecx"))
-			{
-				return cpu.ecx;
-			}
-			else if (!strcmp(tokens[p].str, "$edx"))
-			{
-				return cpu.edx;
-			}
-			else if (!strcmp(tokens[p].str, "$ebx"))
-			{
-				return cpu.ebx;
-			}
-			else if (!strcmp(tokens[p].str, "$esp"))
-			{
-				return cpu.esp;
-			}
-			else if (!strcmp(tokens[p].str, "$ebp"))
-			{
-				return cpu.ebp;
-			}
-			else if (!strcmp(tokens[p].str, "$esi"))
-			{
-				return cpu.esi;
-			}
-			else if (!strcmp(tokens[p].str, "$edi"))
-			{
-				return cpu.edi;
-			}
-			else if (!strcmp(tokens[p].str, "$eip"))
-			{
-				return cpu.eip;
-			}
-			else
-			{
-				return 0;
-			}
-		}
-		else
+	}
+	else if (tokens[p].type == NEG)
+	{
+		sscanf(tokens[q].str, "%d", &result);
+		return -result;
+		if (p > q)
 		{
 			assert(0);
 		}
-	}
-	else if (check_parentheses(p, q) == true)
-	{
-		return eval(p + 1, q - 1);
-	}
-	else
-	{
-		op = dominant_operator(p, q);
-		if (op == -2)
+		else if (p == q)
 		{
-			assert(0);
-		}
-		else if (tokens[p].type == '!')
-		{
-			sscanf(tokens[q].str, "%d", &result);
-			return -result;
-		}
-		else if (tokens[p].type == RESGISTER)
-		{
-			if (!strcmp(tokens[p].str, "$eax"))
+			if (tokens[p].type == NUM)
 			{
-				result = cpu.eax;
+				sscanf(tokens[p].str, "%d", &result);
 				return result;
 			}
-			else if (!strcmp(tokens[p].str, "$ecx"))
+			else if (tokens[p].type == HEX)
 			{
-				result = cpu.ecx;
-				return result;
+				int i = 2;
+				while (tokens[p].str[i] != 0)
+				{
+					result *= 16;
+					result += tokens[p].str[i] < 58 ? tokens[p].str[i] - '0' : tokens[p].str[i] - 'a' + 10;
+					i++;
+				}
 			}
-			else if (!strcmp(tokens[p].str, "$edx"))
+			else if (tokens[p].type == RESGISTER)
 			{
-				result = cpu.edx;
-				return result;
-			}
-			else if (!strcmp(tokens[p].str, "$ebx"))
-			{
-				result = cpu.ebx;
-				return result;
-			}
-			else if (!strcmp(tokens[p].str, "$esp"))
-			{
-				result = cpu.esp;
-				return result;
-			}
-			else if (!strcmp(tokens[p].str, "$ebp"))
-			{
-				result = cpu.ebp;
-				return result;
-			}
-			else if (!strcmp(tokens[p].str, "$esi"))
-			{
-				result = cpu.esi;
-				return result;
-			}
-			else if (!strcmp(tokens[p].str, "$edi"))
-			{
-				result = cpu.edi;
-				return result;
-			}
-			else if (!strcmp(tokens[p].str, "$eip"))
-			{
-				result = cpu.eip;
-				return result;
+				if (!strcmp(tokens[p].str, "$eax"))
+				{
+					return cpu.eax;
+				}
+				else if (!strcmp(tokens[p].str, "$ecx"))
+				{
+					return cpu.ecx;
+				}
+				else if (!strcmp(tokens[p].str, "$edx"))
+				{
+					return cpu.edx;
+				}
+				else if (!strcmp(tokens[p].str, "$ebx"))
+				{
+					return cpu.ebx;
+				}
+				else if (!strcmp(tokens[p].str, "$esp"))
+				{
+					return cpu.esp;
+				}
+				else if (!strcmp(tokens[p].str, "$ebp"))
+				{
+					return cpu.ebp;
+				}
+				else if (!strcmp(tokens[p].str, "$esi"))
+				{
+					return cpu.esi;
+				}
+				else if (!strcmp(tokens[p].str, "$edi"))
+				{
+					return cpu.edi;
+				}
+				else if (!strcmp(tokens[p].str, "$eip"))
+				{
+					return cpu.eip;
+				}
+				else
+				{
+					return 0;
+				}
 			}
 			else
 			{
 				assert(0);
-				return 0;
 			}
 		}
-	}
-	val1 = eval(p, op - 1);
-	val2 = eval(op + 1, q);
+		else if (check_parentheses(p, q) == true)
+		{
+			return eval(p + 1, q - 1);
+		}
+		else
+		{
+			op = dominant_operator(p, q);
+			if (op == -2)
+			{
+				assert(0);
+			}
+			else if (tokens[p].type == '!')
+			{
+				sscanf(tokens[q].str, "%d", &result);
+				return !result;
+			}
+			else if (tokens[p].type == RESGISTER)
+			{
+				if (!strcmp(tokens[p].str, "$eax"))
+				{
+					result = cpu.eax;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$ecx"))
+				{
+					result = cpu.ecx;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$edx"))
+				{
+					result = cpu.edx;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$ebx"))
+				{
+					result = cpu.ebx;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$esp"))
+				{
+					result = cpu.esp;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$ebp"))
+				{
+					result = cpu.ebp;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$esi"))
+				{
+					result = cpu.esi;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$edi"))
+				{
+					result = cpu.edi;
+					return result;
+				}
+				else if (!strcmp(tokens[p].str, "$eip"))
+				{
+					result = cpu.eip;
+					return result;
+				}
+				else
+				{
+					assert(0);
+					return 0;
+				}
+			}
+		}
+		val1 = eval(p, op - 1);
+		val2 = eval(op + 1, q);
 
-	switch (tokens[op].type)
-	{
-	case '+':
-		return val1 + val2;
-	case '-':
-		return val1 - val2;
-	case '*':
-		return val1 * val2;
-	case '/':
-		return val1 / val2;
-	case OR:
-		return val1 || val2;
-	case AND:
-		return val1 && val2;
-	case EQ:
-		if (val1 == val2)
+		switch (tokens[op].type)
 		{
-			return 1;
+		case '+':
+			return val1 + val2;
+		case '-':
+			return val1 - val2;
+		case '*':
+			return val1 * val2;
+		case '/':
+			return val1 / val2;
+		case OR:
+			return val1 || val2;
+		case AND:
+			return val1 && val2;
+		case EQ:
+			if (val1 == val2)
+			{
+				return 1;
+			}
+			else
+			{
+				return 0;
+			}
+		case NOTEQ:
+			if (val1 != val2)
+			{
+				return 1;
+			}
+			else
+			{
+				return 0;
+			}
+		default:
+			assert(0);
 		}
-		else
-		{
-			return 0;
-		}
-	case NOTEQ:
-		if (val1 != val2)
-		{
-			return 1;
-		}
-		else
-		{
-			return 0;
-		}
-	default:
-		assert(0);
 	}
 	return 0;
 }
