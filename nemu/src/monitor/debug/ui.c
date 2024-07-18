@@ -1,275 +1,260 @@
-#include "monitor/monitor.h"
 #include "monitor/expr.h"
+#include "monitor/monitor.h"
 #include "monitor/watchpoint.h"
 #include "nemu.h"
 
-#include <stdlib.h>
-#include <readline/readline.h>
 #include <readline/history.h>
+#include <readline/readline.h>
+#include <stdlib.h>
+
+typedef struct {
+  swaddr_t prev_ebp;
+  swaddr_t ret_addr;
+  // uint32_t args[4];
+} PartOfStackFrame;
 
 void cpu_exec(uint32_t);
 
-/* We use the `readline' library to provide more flexibility to read from stdin. */
-char *rl_gets()
-{
-	static char *line_read = NULL;
+/* We use the `readline' library to provide more flexibility to read from
+ * stdin.
+ */
+char* rl_gets() {
+  static char* line_read = NULL;
 
-	if (line_read)
-	{
-		free(line_read);
-		line_read = NULL;
-	}
+  if (line_read) {
+    free(line_read);
+    line_read = NULL;
+  }
 
-	line_read = readline("(nemu) ");
+  line_read = readline("(nemu) ");
 
-	if (line_read && *line_read)
-	{
-		add_history(line_read);
-	}
+  if (line_read && *line_read) {
+    add_history(line_read);
+  }
 
-	return line_read;
+  return line_read;
 }
 
-static int cmd_c(char *args)
-{
-	cpu_exec(-1);
-	return 0;
+static int cmd_c(char* args) {
+  cpu_exec(-1);
+  return 0;
 }
 
-static int cmd_q(char *args)
-{
-	return -1;
+static int cmd_q(char* args) {
+  return -1;
 }
 
-static int cmd_help(char *args);
-static int cmd_si(char *args);
-static int cmd_info(char *args);
-static int cmd_x(char *args);
-static int cmd_p(char *args);
-static int cmd_d(char *args);
-static int cmd_w(char *args);
-static struct
-{
-	char *name;
-	char *description;
-	int (*handler)(char *);
+static int cmd_help(char* args);
+static int cmd_si(char* args);
+static int cmd_info(char* args);
+static int cmd_x(char* args);
+static int cmd_p(char* args);
+static int cmd_d(char* args);
+static int cmd_w(char* args);
+static int cmd_bt(char* args);
+char* getFuncName(int eip);
+static struct {
+  char* name;
+  char* description;
+  int (*handler)(char*);
 } cmd_table[] = {
-	{"help", "Display informations about all supported commands", cmd_help},
-	{"c", "Continue the execution of the program", cmd_c},
-	{"q", "Exit NEMU", cmd_q},
-	{"si", "One step", cmd_si},
-	{"info", "Display all informations of regisiters", cmd_info},
-	{"x", "Print the content of address", cmd_x},
-	{"p", "Calculate the value of expression", cmd_p},
-	{"d", "Delete the watchpoint", cmd_d},
-	{"w", "Set the watchpoint", cmd_w},
+    {"help", "Display informations about all supported commands", cmd_help},
+    {"c", "Continue the execution of the program", cmd_c},
+    {"q", "Exit NEMU", cmd_q},
+    {"si", "One step", cmd_si},
+    {"info", "Display all informations of regisiters", cmd_info},
+    {"x", "Print the content of address", cmd_x},
+    {"p", "Calculate the value of expression", cmd_p},
+    {"d", "Delete the watchpoint", cmd_d},
+    {"w", "Set the watchpoint", cmd_w},
+    {"bt", "Print the stack frame", cmd_bt},
 
-	/* TODO: Add more commands */
+    /* TODO: Add more commands */
 
 };
 
 #define NR_CMD (sizeof(cmd_table) / sizeof(cmd_table[0]))
 
-static int cmd_help(char *args)
-{
-	/* extract the first argument */
-	char *arg = strtok(NULL, " ");
-	int i;
+static int cmd_help(char* args) {
+  /* extract the first argument */
+  char* arg = strtok(NULL, " ");
+  int i;
 
-	if (arg == NULL)
-	{
-		/* no argument given */
-		for (i = 0; i < NR_CMD; i++)
-		{
-			printf("%s - %s\n", cmd_table[i].name, cmd_table[i].description);
-		}
-	}
-	else
-	{
-		for (i = 0; i < NR_CMD; i++)
-		{
-			if (strcmp(arg, cmd_table[i].name) == 0)
-			{
-				printf("%s - %s\n", cmd_table[i].name, cmd_table[i].description);
-				return 0;
-			}
-		}
-		printf("Unknown command '%s'\n", arg);
-	}
-	return 0;
+  if (arg == NULL) {
+    /* no argument given */
+    for (i = 0; i < NR_CMD; i++) {
+      printf("%s - %s\n", cmd_table[i].name, cmd_table[i].description);
+    }
+  } else {
+    for (i = 0; i < NR_CMD; i++) {
+      if (strcmp(arg, cmd_table[i].name) == 0) {
+        printf("%s - %s\n", cmd_table[i].name, cmd_table[i].description);
+        return 0;
+      }
+    }
+    printf("Unknown command '%s'\n", arg);
+  }
+  return 0;
 }
 
-static int cmd_si(char *args)
-{
-	char *sencondWord = strtok(NULL, " ");
-	int step = 0;
-	int i;
-	if (sencondWord == NULL)
-	{
-		cpu_exec(1);
-		return 0;
-	}
-	sscanf(sencondWord, "%d", &step);
-	if (step <= 0)
-	{
-		printf("MISINIPUT\n");
-		return 0;
-	}
-	for (i = 0; i < step; i++)
-	{
-		cpu_exec(1);
-	}
-	return 0;
+static int cmd_si(char* args) {
+  char* sencondWord = strtok(NULL, " ");
+  int step = 0;
+  int i;
+  if (sencondWord == NULL) {
+    cpu_exec(1);
+    return 0;
+  }
+  sscanf(sencondWord, "%d", &step);
+  if (step <= 0) {
+    printf("MISINIPUT\n");
+    return 0;
+  }
+  for (i = 0; i < step; i++) {
+    cpu_exec(1);
+  }
+  return 0;
 }
 
-static int cmd_info(char *args)
-{
-	char *sencondWord = strtok(NULL, " ");
-	int i;
-	if (strcmp(sencondWord, "r") == 0)
-	{
-		for (i = 0; i < 8; i++)
-		{
-			printf("%s\t\t", regsl[i]);
-			printf("0x%08x\t\t%d\n", cpu.gpr[i]._32, cpu.gpr[i]._32);
-		}
-		printf("eip\t\t0x%08x\t\t%d\n", cpu.eip, cpu.eip);
-		return 0;
-	}
-	else if (strcmp(sencondWord, "w") == 0)
-	{
-		printf_wp();
-		return 0;
-	}
-	printf("MISINPUT\n");
-	return 0;
+static int cmd_info(char* args) {
+  char* sencondWord = strtok(NULL, " ");
+  int i;
+  if (strcmp(sencondWord, "r") == 0) {
+    for (i = 0; i < 8; i++) {
+      printf("%s\t\t", regsl[i]);
+      printf("0x%08x\t\t%d\n", cpu.gpr[i]._32, cpu.gpr[i]._32);
+    }
+    printf("eip\t\t0x%08x\t\t%d\n", cpu.eip, cpu.eip);
+    return 0;
+  } else if (strcmp(sencondWord, "w") == 0) {
+    printf_wp();
+    return 0;
+  }
+  printf("MISINPUT\n");
+  return 0;
 }
 
-static int cmd_x(char *args)
-{
-	char *sencondWord = strtok(NULL, " ");
-	char *thirdWord = strtok(NULL, " ");
+static int cmd_x(char* args) {
+  char* sencondWord = strtok(NULL, " ");
+  char* thirdWord = strtok(NULL, " ");
 
-	int step = 0;
-	swaddr_t address;
+  int step = 0;
+  swaddr_t address;
 
-	sscanf(sencondWord, "%d", &step);
-	sscanf(thirdWord, "%x", &address);
+  sscanf(sencondWord, "%d", &step);
+  sscanf(thirdWord, "%x", &address);
 
-	int i, j = 0;
-	for (i = 0; i < step; i++)
-	{
-		if (j % 4 == 0)
-		{
-			printf("0x%x:", address);
-		}
-		printf("0x%08x ", swaddr_read(address, 4));
-		address += 4;
-		j++;
-		if (j % 4 == 0)
-		{
-			printf("\n");
-		}
-	}
-	printf("\n");
-	return 0;
+  int i, j = 0;
+  for (i = 0; i < step; i++) {
+    if (j % 4 == 0) {
+      printf("0x%x:", address);
+    }
+    printf("0x%08x ", swaddr_read(address, 4));
+    address += 4;
+    j++;
+    if (j % 4 == 0) {
+      printf("\n");
+    }
+  }
+  printf("\n");
+  return 0;
 }
 
-static int cmd_p(char *args)
-{
-	bool *success = false;
-	int i;
-	i = expr(args, success);
-	if (!success)
-	{
-		printf("%d\n", i);
-	}
-	return 0;
+static int cmd_p(char* args) {
+  bool* success = false;
+  int i;
+  i = expr(args, success);
+  if (!success) {
+    printf("%d\n", i);
+  }
+  return 0;
 }
 
-void ui_mainloop()
-{
-	while (1)
-	{
-		char *str = rl_gets();
-		char *str_end = str + strlen(str);
+void ui_mainloop() {
+  while (1) {
+    char* str = rl_gets();
+    char* str_end = str + strlen(str);
 
-		/* extract the first token as the command */
-		char *cmd = strtok(str, " ");
-		if (cmd == NULL)
-		{
-			continue;
-		}
+    /* extract the first token as the command */
+    char* cmd = strtok(str, " ");
+    if (cmd == NULL) {
+      continue;
+    }
 
-		/* treat the remaining string as the arguments,
-		 * which may need further parsing
-		 */
-		char *args = cmd + strlen(cmd) + 1;
-		if (args >= str_end)
-		{
-			args = NULL;
-		}
+    /* treat the remaining string as the arguments,
+     * which may need further parsing
+     */
+    char* args = cmd + strlen(cmd) + 1;
+    if (args >= str_end) {
+      args = NULL;
+    }
 
 #ifdef HAS_DEVICE
-		extern void sdl_clear_event_queue(void);
-		sdl_clear_event_queue();
+    extern void sdl_clear_event_queue(void);
+    sdl_clear_event_queue();
 #endif
 
-		int i;
-		for (i = 0; i < NR_CMD; i++)
-		{
-			if (strcmp(cmd, cmd_table[i].name) == 0)
-			{
-				if (cmd_table[i].handler(args) < 0)
-				{
-					return;
-				}
-				break;
-			}
-		}
+    int i;
+    for (i = 0; i < NR_CMD; i++) {
+      if (strcmp(cmd, cmd_table[i].name) == 0) {
+        if (cmd_table[i].handler(args) < 0) {
+          return;
+        }
+        break;
+      }
+    }
 
-		if (i == NR_CMD)
-		{
-			printf("Unknown command '%s'\n", cmd);
-		}
-	}
+    if (i == NR_CMD) {
+      printf("Unknown command '%s'\n", cmd);
+    }
+  }
 }
 
-static int cmd_d(char *args)
-{
-	int p;
-	bool key = true;
-	sscanf(args, "%d", &p);
-	WP *q = delete_wp(p, &key);
-	if (key)
-	{
-		printf("Delete watchpoint %d: %s\n", q->NO, q->expr);
-		free_wp(q);
-		return 0;
-	}
-	else
-	{
-		printf("No found watchpoint %d\n", p);
-		return 0;
-	}
-	return 0;
+static int cmd_d(char* args) {
+  int p;
+  bool key = true;
+  sscanf(args, "%d", &p);
+  WP* q = delete_wp(p, &key);
+  if (key) {
+    printf("Delete watchpoint %d: %s\n", q->NO, q->expr);
+    free_wp(q);
+    return 0;
+  } else {
+    printf("No found watchpoint %d\n", p);
+    return 0;
+  }
+  return 0;
 }
 
-static int cmd_w(char *args)
-{
-	if (args == NULL)
-	{
-		printf("No input!\n");
-	}
-	else
-	{
-		WP* temp;
-		bool *success = false;
-		temp=new_wp();
-		temp->expr = malloc(strlen(args)+1);
-		strcpy(temp->expr,args);
-		temp->result=expr(temp->expr, success);
-		printf ("Watchpoint %d: %s\n",temp->NO,temp->expr);
-	}
-	return 0;
+static int cmd_w(char* args) {
+  if (args == NULL) {
+    printf("No input!\n");
+  } else {
+    WP* temp;
+    bool* success = false;
+    temp = new_wp();
+    temp->expr = malloc(strlen(args) + 1);
+    strcpy(temp->expr, args);
+    temp->result = expr(temp->expr, success);
+    printf("Watchpoint %d: %s\n", temp->NO, temp->expr);
+  }
+  return 0;
+}
+
+static int cmd_bt(char* args) {
+  PartOfStackFrame frame;
+  frame.ret_addr = cpu.eip;
+  swaddr_t temp_ebp = cpu.ebp;
+  int count = 0;
+  while (temp_ebp) {
+    printf("#%d\t0x%x\t%s\t0x%x\t0x%x\t0x%x\t0x%x\n", count++, frame.ret_addr,
+           getFuncName(cpu.eip), swaddr_read(temp_ebp + 8, 4),
+           swaddr_read(temp_ebp + 12, 4), swaddr_read(temp_ebp + 16, 4),
+           swaddr_read(temp_ebp + 20, 4));
+    // current_sreg = R_SS;
+    frame.prev_ebp = swaddr_read(temp_ebp, 4);
+    frame.ret_addr = swaddr_read(temp_ebp + 4, 4);
+    temp_ebp = frame.prev_ebp;
+  }
+  return 0;
 }
