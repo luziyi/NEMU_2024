@@ -19,6 +19,7 @@
 #include "arith/sub.h"
 
 #include "control/call.h"
+#include "control/je.h"
 #include "control/jmp.h"
 #include "control/ret.h"
 
