@@ -8,6 +8,7 @@
 
 #include "arith/adc.h"
 #include "arith/add.h"
+#include "arith/cmp.h"
 #include "arith/dec.h"
 #include "arith/div.h"
 #include "arith/idiv.h"
